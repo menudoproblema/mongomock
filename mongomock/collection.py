@@ -947,13 +947,14 @@ class Collection(object):
              no_cursor_timeout=False, cursor_type=None, sort=None,
              allow_partial_results=False, oplog_replay=False, modifiers=None,
              batch_size=0, manipulate=True, collation=None, session=None,
-             max_time_ms=None):
+             max_time_ms=None, return_key=False):
         spec = filter
         if spec is None:
             spec = {}
         validate_is_mapping('filter', spec)
         return Cursor(self, spec, sort, projection, skip, limit,
-                      collation=collation).max_time_ms(max_time_ms)
+                      collation=collation, return_key=return_key).max_time_ms(
+                          max_time_ms)
 
     def _get_dataset(self, spec, sort, fields, as_class):
         dataset = self._iter_documents(spec)
@@ -1680,7 +1681,8 @@ class Collection(object):
 class Cursor(object):
 
     def __init__(self, collection, spec=None, sort=None, projection=None, skip=0, limit=0,
-                 collation=None, no_cursor_timeout=False, batch_size=0, session=None):
+                 collation=None, no_cursor_timeout=False, batch_size=0, session=None,
+                 return_key=False):
         super(Cursor, self).__init__()
         self.collection = collection
         spec = helpers.patch_datetime_awareness_in_document(spec)
@@ -1696,6 +1698,7 @@ class Cursor(object):
         self._limit = limit if limit != 0 else None
         self._collation = collation
         self.session = session
+        self._return_key = return_key
         self.rewind()
 
     def _compute_results(self, with_limit_and_skip=False):
